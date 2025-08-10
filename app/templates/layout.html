@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<!-- 通用样式 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<!-- 子页面特定样式 -->
+{% block page_styles %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="app-container">
+    <!-- 顶部导航 -->
+    <header class="app-header">
+        <div class="header-left">
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <span class="app-logo">Prompt the World</span>
+        </div>
+        
+        <div class="header-center">
+            <input type="search" 
+                   class="search-bar" 
+                   id="searchBar"
+                   placeholder="搜索...">
+        </div>
+        
+        <div class="header-right">
+            <button class="setting-btn" id="settingBtn">⚙</button>
+            <div class="user-avatar" id="userAvatar">
+                <span id="userInitial">U</span>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 侧边栏 -->
+    <aside class="app-sidebar" id="sidebar">
+        <nav class="sidebar-nav">
+            <a href="/home" class="nav-item" data-page="prompts">
+                <span class="nav-icon">📝</span>
+                <span class="nav-text">我的Prompt</span>
+            </a>
+            <a href="#" class="nav-item" data-page="collaboration">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">协作空间</span>
+            </a>
+            <a href="/tags" class="nav-item" data-page="tags">
+                <span class="nav-icon">🏷️</span>
+                <span class="nav-text">标签管理</span>
+            </a>
+            <a href="#" class="nav-item" data-page="history">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">测试历史</span>
+            </a>
+        </nav>
+        
+        <!-- 标签过滤 -->
+        <div class="tag-filter">
+            <h3 class="filter-title">标签筛选</h3>
+            <div class="tag-list" id="tagFilter">
+                <span class="tag-item active" data-tag="">全部</span>
+                <!-- 动态加载标签 -->
+            </div>
+        </div>
+        
+        <!-- 登出按钮 -->
+        <div class="sidebar-footer">
+            <button class="logout-btn" id="logoutBtn">登出</button>
+        </div>
+    </aside>
+    
+    <!-- 主内容区 -->
+    <main class="app-main">
+        {% block page_content %}{% endblock %}
+    </main>
+</div>
+
+<!-- 引入认证工具 -->
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+
+<script>
+// 全局导航脚本
+document.addEventListener('DOMContentLoaded', () => {
+    // 使用统一的认证检查
+    if (window.AuthUtils && !window.AuthUtils.initAuthCheck()) {
+        return; // 认证失败，已重定向
+    }
+    
+    // 加载用户信息
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    document.getElementById('userInitial').textContent = user.username ? user.username[0].toUpperCase() : 'U';
+    
+    // 绑定通用事件
+    bindLayoutEvents();
+    
+    // 设置当前页面的导航激活状态
+    setActiveNav();
+    
+    // 调用页面特定的初始化函数
+    if (typeof initPage === 'function') {
+        initPage();
+    }
+});
+
+// 绑定布局事件
+function bindLayoutEvents() {
+    // 菜单切换
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('collapsed');
+    });
+    
+    // 登出
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        const token = localStorage.getItem('token');
+        await fetch('/api/v1/auth/logout', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+    });
+    
+    // 搜索栏事件（可以被页面覆盖）
+    if (typeof handleSearch === 'function') {
+        let searchTimer;
+        document.getElementById('searchBar').addEventListener('input', (e) => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                handleSearch(e.target.value);
+            }, 300);
+        });
+    }
+}
+
+// 设置当前页面的导航激活状态
+function setActiveNav() {
+    const currentPath = window.location.pathname;
+    const navItems = document.querySelectorAll('.nav-item');
+    
+    navItems.forEach(item => {
+        item.classList.remove('active');
+        
+        // 根据路径判断激活状态
+        if (currentPath === '/home' && item.dataset.page === 'prompts') {
+            item.classList.add('active');
+        } else if (currentPath.startsWith('/editor') && item.dataset.page === 'prompts') {
+            item.classList.add('active');
+        } else if (currentPath.includes(item.dataset.page)) {
+            item.classList.add('active');
+        }
+    });
+}
+
+// 格式化日期（通用工具函数）
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (days > 7) {
+        return date.toLocaleDateString('zh-CN');
+    } else if (days > 0) {
+        return `${days}天前`;
+    } else if (hours > 0) {
+        return `${hours}小时前`;
+    } else if (minutes > 0) {
+        return `${minutes}分钟前`;
+    } else {
+        return '刚刚';
+    }
+}
+</script>
+
+<!-- 页面特定脚本 -->
+{% block page_scripts %}{% endblock %}
+{% endblock %}

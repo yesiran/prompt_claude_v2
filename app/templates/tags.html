@@ -1,0 +1,403 @@
+{% extends "layout.html" %}
+
+{% block title %}标签管理 - Prompt the World{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tags.css') }}">
+{% endblock %}
+
+{% block page_content %}
+<div class="tags-container">
+    <!-- 页面标题栏 -->
+    <div class="page-header">
+        <h1 class="page-title">标签管理</h1>
+        <p class="page-description">管理你的Prompt标签，让创作更有条理</p>
+    </div>
+    
+    <!-- 添加标签区域 -->
+    <div class="add-tag-section">
+        <div class="add-tag-card">
+            <h3 class="section-title">创建新标签</h3>
+            <div class="add-tag-form">
+                <div class="form-row">
+                    <input type="text" 
+                           id="newTagName" 
+                           class="tag-input" 
+                           placeholder="标签名称"
+                           maxlength="30">
+                    
+                    <select id="newTagCategory" class="category-select">
+                        <option value="general">通用</option>
+                        <option value="scene">场景</option>
+                        <option value="model">模型</option>
+                        <option value="type">类型</option>
+                        <option value="project">项目</option>
+                    </select>
+                    
+                    <div class="color-picker-wrapper">
+                        <input type="color" 
+                               id="newTagColor" 
+                               class="color-picker"
+                               value="#6B7280">
+                        <span class="color-preview" id="colorPreview"></span>
+                    </div>
+                    
+                    <button class="btn-add-tag" id="addTagBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        添加标签
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 标签列表区域 -->
+    <div class="tags-list-section">
+        <!-- 分类标签页 -->
+        <div class="category-tabs">
+            <button class="category-tab active" data-category="all">
+                全部 <span class="tag-count" id="countAll">0</span>
+            </button>
+            <button class="category-tab" data-category="scene">
+                场景 <span class="tag-count" id="countScene">0</span>
+            </button>
+            <button class="category-tab" data-category="model">
+                模型 <span class="tag-count" id="countModel">0</span>
+            </button>
+            <button class="category-tab" data-category="type">
+                类型 <span class="tag-count" id="countType">0</span>
+            </button>
+            <button class="category-tab" data-category="project">
+                项目 <span class="tag-count" id="countProject">0</span>
+            </button>
+            <button class="category-tab" data-category="general">
+                通用 <span class="tag-count" id="countGeneral">0</span>
+            </button>
+        </div>
+        
+        <!-- 标签网格 -->
+        <div class="tags-grid" id="tagsGrid">
+            <!-- 动态加载标签卡片 -->
+        </div>
+        
+        <!-- 空状态提示 -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                <line x1="7" y1="7" x2="7.01" y2="7"/>
+            </svg>
+            <p>还没有标签，创建第一个吧</p>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal" id="deleteModal" style="display: none;">
+    <div class="modal-content">
+        <h3 class="modal-title">确认删除</h3>
+        <p class="modal-message">
+            确定要删除标签 "<span id="deleteTagName"></span>" 吗？
+            <br>
+            <span class="warning-text">此操作不可恢复</span>
+        </p>
+        <div class="modal-actions">
+            <button class="btn-cancel" id="cancelDeleteBtn">取消</button>
+            <button class="btn-confirm" id="confirmDeleteBtn">确认删除</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+// 页面初始化
+function initPage() {
+    loadTags();
+    bindEvents();
+    updateColorPreview();
+}
+
+// 当前显示的分类
+let currentCategory = 'all';
+let allTags = [];
+let deleteTagId = null;
+
+// 加载标签列表
+async function loadTags() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/v1/tags', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            allTags = data.data || [];
+            renderTags();
+            updateCounts();
+        } else if (response.status === 401 || response.status === 422) {
+            window.AuthUtils.redirectToLogin('登录已过期，请重新登录');
+        }
+    } catch (error) {
+        console.error('加载标签失败:', error);
+        showToast('加载标签失败', 'error');
+    }
+}
+
+// 渲染标签列表
+function renderTags() {
+    const grid = document.getElementById('tagsGrid');
+    const emptyState = document.getElementById('emptyState');
+    
+    // 过滤标签
+    const filteredTags = currentCategory === 'all' 
+        ? allTags 
+        : allTags.filter(tag => tag.category === currentCategory);
+    
+    if (filteredTags.length === 0) {
+        grid.innerHTML = '';
+        emptyState.style.display = 'flex';
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    grid.innerHTML = '';
+    
+    filteredTags.forEach(tag => {
+        const card = createTagCard(tag);
+        grid.appendChild(card);
+    });
+}
+
+// 创建标签卡片
+function createTagCard(tag) {
+    const card = document.createElement('div');
+    card.className = 'tag-card';
+    card.dataset.id = tag.id;
+    
+    card.innerHTML = `
+        <div class="tag-card-header">
+            <span class="tag-name" style="background-color: ${tag.color}20; color: ${tag.color}">
+                ${tag.name}
+            </span>
+            <span class="tag-category">${getCategoryName(tag.category)}</span>
+        </div>
+        <div class="tag-card-body">
+            <div class="tag-stats">
+                <span class="stat-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    </svg>
+                    使用 ${tag.use_count || 0} 次
+                </span>
+            </div>
+            <button class="btn-delete-tag" data-id="${tag.id}" data-name="${tag.name}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    return card;
+}
+
+// 获取分类名称
+function getCategoryName(category) {
+    const names = {
+        'general': '通用',
+        'scene': '场景',
+        'model': '模型',
+        'type': '类型',
+        'project': '项目'
+    };
+    return names[category] || category;
+}
+
+// 更新分类计数
+function updateCounts() {
+    const counts = {
+        all: allTags.length,
+        scene: 0,
+        model: 0,
+        type: 0,
+        project: 0,
+        general: 0
+    };
+    
+    allTags.forEach(tag => {
+        if (counts.hasOwnProperty(tag.category)) {
+            counts[tag.category]++;
+        }
+    });
+    
+    Object.keys(counts).forEach(category => {
+        const element = document.getElementById(`count${category.charAt(0).toUpperCase() + category.slice(1)}`);
+        if (element) {
+            element.textContent = counts[category];
+        }
+    });
+}
+
+// 添加新标签
+async function addTag() {
+    const name = document.getElementById('newTagName').value.trim();
+    const category = document.getElementById('newTagCategory').value;
+    const color = document.getElementById('newTagColor').value;
+    
+    if (!name) {
+        showToast('请输入标签名称', 'warning');
+        return;
+    }
+    
+    // 检查重复
+    if (allTags.some(tag => tag.name === name)) {
+        showToast('标签名称已存在', 'warning');
+        return;
+    }
+    
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/v1/tags', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, category, color })
+        });
+        
+        if (response.ok) {
+            showToast('标签创建成功', 'success');
+            document.getElementById('newTagName').value = '';
+            loadTags();
+        } else {
+            const data = await response.json();
+            showToast(data.message || '创建失败', 'error');
+        }
+    } catch (error) {
+        console.error('创建标签失败:', error);
+        showToast('创建标签失败', 'error');
+    }
+}
+
+// 删除标签
+async function deleteTag(tagId) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/tags/${tagId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            showToast('标签删除成功', 'success');
+            loadTags();
+        } else {
+            const data = await response.json();
+            showToast(data.message || '删除失败', 'error');
+        }
+    } catch (error) {
+        console.error('删除标签失败:', error);
+        showToast('删除标签失败', 'error');
+    }
+}
+
+// 绑定事件
+function bindEvents() {
+    // 添加标签按钮
+    document.getElementById('addTagBtn').addEventListener('click', addTag);
+    
+    // 回车添加标签
+    document.getElementById('newTagName').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            addTag();
+        }
+    });
+    
+    // 颜色选择器
+    document.getElementById('newTagColor').addEventListener('input', updateColorPreview);
+    
+    // 分类标签页切换
+    document.querySelectorAll('.category-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentCategory = tab.dataset.category;
+            renderTags();
+        });
+    });
+    
+    // 删除标签事件委托
+    document.getElementById('tagsGrid').addEventListener('click', (e) => {
+        const deleteBtn = e.target.closest('.btn-delete-tag');
+        if (deleteBtn) {
+            deleteTagId = deleteBtn.dataset.id;
+            const tagName = deleteBtn.dataset.name;
+            document.getElementById('deleteTagName').textContent = tagName;
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+    });
+    
+    // 删除确认弹窗
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+        if (deleteTagId) {
+            deleteTag(deleteTagId);
+            document.getElementById('deleteModal').style.display = 'none';
+            deleteTagId = null;
+        }
+    });
+    
+    document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+        document.getElementById('deleteModal').style.display = 'none';
+        deleteTagId = null;
+    });
+    
+    // 点击弹窗外部关闭
+    document.getElementById('deleteModal').addEventListener('click', (e) => {
+        if (e.target.id === 'deleteModal') {
+            document.getElementById('deleteModal').style.display = 'none';
+            deleteTagId = null;
+        }
+    });
+}
+
+// 更新颜色预览
+function updateColorPreview() {
+    const color = document.getElementById('newTagColor').value;
+    document.getElementById('colorPreview').style.backgroundColor = color;
+}
+
+// 显示提示消息
+function showToast(message, type = 'info') {
+    // 创建提示元素
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    
+    // 添加到页面
+    document.body.appendChild(toast);
+    
+    // 显示动画
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    // 3秒后移除
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,256 @@
+/**
+ * 组件样式
+ * 通用组件的样式定义
+ */
+
+/* 音乐控制 */
+.music-control {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background-color: var(--color-background);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+}
+
+.music-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-lg);
+    cursor: pointer;
+    transition: background-color var(--duration-fast);
+}
+
+.music-toggle:hover {
+    background-color: var(--color-accent);
+    color: white;
+}
+
+.music-select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    cursor: pointer;
+}
+
+/* 标签组件 */
+.tag {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    border: 1px solid var(--color-border);
+    transition: all var(--duration-fast) ease;
+    cursor: default;
+}
+
+.tag:hover {
+    transform: translateY(-1px);
+}
+
+.tag.removable {
+    padding-right: var(--spacing-lg);
+    position: relative;
+    cursor: pointer;
+}
+
+.tag.removable::after {
+    content: '×';
+    position: absolute;
+    right: var(--spacing-sm);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--text-base);
+    opacity: 0.5;
+}
+
+.tag.removable:hover::after {
+    opacity: 1;
+}
+
+/* 加载动画 */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-surface);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* 提示消息 */
+.toast {
+    position: fixed;
+    bottom: var(--spacing-xl);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--color-background);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    font-size: var(--text-sm);
+    z-index: 10000;
+    animation: slideUp var(--duration-normal) ease-out;
+}
+
+.toast.success {
+    border-left: 3px solid var(--color-success);
+}
+
+.toast.error {
+    border-left: 3px solid var(--color-error);
+}
+
+.toast.warning {
+    border-left: 3px solid var(--color-warning);
+}
+
+/* 模态框 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--duration-normal) ease;
+}
+
+.modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: var(--color-background);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-2xl);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-2xl);
+    transform: scale(0.9);
+    transition: transform var(--duration-normal) ease;
+}
+
+.modal.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.modal-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color var(--duration-fast);
+}
+
+.modal-close:hover {
+    background-color: var(--color-surface);
+}
+
+/* 工具提示 */
+.tooltip {
+    position: relative;
+}
+
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--color-text);
+    color: var(--color-background);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--duration-fast) ease;
+    pointer-events: none;
+    margin-bottom: var(--spacing-xs);
+}
+
+.tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 进度条 */
+.progress {
+    width: 100%;
+    height: 4px;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: var(--color-accent);
+    border-radius: var(--radius-full);
+    transition: width var(--duration-normal) ease;
+}
+
+/* 徽章 */
+.badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: var(--color-accent);
+    color: white;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    line-height: 1;
+}

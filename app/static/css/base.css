@@ -1,0 +1,294 @@
+/**
+ * 基础样式
+ * 全局重置和基础元素样式
+ */
+
+/* 重置样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--color-text);
+    background-color: var(--color-background);
+    transition: background-color var(--duration-normal) var(--ease-in-out),
+                color var(--duration-normal) var(--ease-in-out);
+}
+
+/* 标题 */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-weight: var(--font-medium);
+    line-height: var(--leading-tight);
+    margin-bottom: var(--spacing-md);
+}
+
+h1 {
+    font-size: var(--text-3xl);
+}
+
+h2 {
+    font-size: var(--text-2xl);
+}
+
+h3 {
+    font-size: var(--text-xl);
+}
+
+h4 {
+    font-size: var(--text-lg);
+}
+
+/* 段落 */
+p {
+    margin-bottom: var(--spacing-md);
+}
+
+/* 链接 */
+a {
+    color: var(--color-accent);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-in-out);
+}
+
+a:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+/* 按钮 */
+button {
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    color: inherit;
+}
+
+/* 输入框 */
+input,
+textarea,
+select {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--color-background);
+    transition: border-color var(--duration-fast) var(--ease-in-out),
+                box-shadow var(--duration-fast) var(--ease-in-out);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(91, 141, 238, 0.1);
+}
+
+/* 禁用状态 */
+input:disabled,
+textarea:disabled,
+select:disabled,
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 列表 */
+ul, ol {
+    list-style: none;
+}
+
+/* 图片 */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* 代码 */
+code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    padding: 0.125em 0.25em;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-sm);
+}
+
+pre {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    padding: var(--spacing-md);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-secondary);
+}
+
+/* 选中文本 */
+::selection {
+    background-color: var(--color-accent);
+    color: white;
+}
+
+/* 工具类 */
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-sm {
+    gap: var(--spacing-sm);
+}
+
+.gap-md {
+    gap: var(--spacing-md);
+}
+
+.gap-lg {
+    gap: var(--spacing-lg);
+}
+
+/* 动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes zoomIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn var(--duration-normal) var(--ease-out);
+}
+
+.animate-slide-up {
+    animation: slideUp var(--duration-normal) var(--ease-out);
+}
+
+.animate-zoom-in {
+    animation: zoomIn var(--duration-normal) var(--ease-out);
+}

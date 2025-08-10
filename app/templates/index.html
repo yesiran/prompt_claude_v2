@@ -1,0 +1,250 @@
+{% extends "layout.html" %}
+
+{% block title %}我的Prompt - Prompt the World{% endblock %}
+
+{% block page_content %}
+<div class="content-header">
+    <h2 class="content-title">我的Prompt</h2>
+    <div class="content-actions">
+        <select class="sort-select" id="sortSelect">
+            <option value="created_at">创建时间</option>
+            <option value="updated_at">更新时间</option>
+            <option value="star_count">收藏数</option>
+        </select>
+    </div>
+</div>
+
+<div class="prompt-grid" id="promptGrid">
+    <!-- 新建卡片 -->
+    <div class="prompt-card new-card" id="newPromptCard">
+        <div class="new-card-content">
+            <span class="new-icon">+</span>
+            <span class="new-text">创建新Prompt</span>
+        </div>
+    </div>
+    
+    <!-- 动态加载Prompt卡片 -->
+</div>
+
+<!-- 分页 -->
+<div class="pagination" id="pagination">
+    <!-- 动态生成分页按钮 -->
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+// 页面初始化函数（会被layout.html调用）
+function initPage() {
+    // 加载Prompt列表
+    loadPrompts();
+    
+    // 加载标签
+    loadTags();
+    
+    // 绑定页面特定事件
+    bindPageEvents();
+}
+
+// 处理搜索（会被layout.html调用）
+function handleSearch(searchText) {
+    loadPrompts(1, searchText);
+}
+
+// 加载Prompt列表
+async function loadPrompts(page = 1, search = '', tags = '') {
+    try {
+        const token = localStorage.getItem('token');
+        const sort = document.getElementById('sortSelect').value;
+        
+        const params = new URLSearchParams({
+            page,
+            limit: 12,
+            search,
+            tags,
+            sort,
+            order: 'desc'
+        });
+        
+        const response = await fetch(`/api/v1/prompts?${params}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            renderPrompts(data.data.items);
+            renderPagination(data.data.pagination);
+        }
+    } catch (error) {
+        console.error('加载Prompt失败:', error);
+    }
+}
+
+// 渲染Prompt卡片
+function renderPrompts(prompts) {
+    const grid = document.getElementById('promptGrid');
+    
+    // 保留新建卡片
+    const newCard = document.getElementById('newPromptCard');
+    grid.innerHTML = '';
+    grid.appendChild(newCard);
+    
+    // 添加Prompt卡片
+    prompts.forEach(prompt => {
+        const card = createPromptCard(prompt);
+        grid.appendChild(card);
+    });
+}
+
+// 创建Prompt卡片
+function createPromptCard(prompt) {
+    const card = document.createElement('div');
+    card.className = 'prompt-card';
+    card.dataset.id = prompt.id;
+    
+    const preview = prompt.content.substring(0, 100) + (prompt.content.length > 100 ? '...' : '');
+    
+    card.innerHTML = `
+        <div class="card-header">
+            <h3 class="card-title">${prompt.title}</h3>
+            <span class="card-version">v${prompt.version_count}</span>
+        </div>
+        <p class="card-preview">${preview}</p>
+        <div class="card-tags">
+            ${prompt.tags ? prompt.tags.map(tag => 
+                `<span class="tag" style="background-color: ${tag.color}20; color: ${tag.color}">${tag.name}</span>`
+            ).join('') : ''}
+        </div>
+        <div class="card-footer">
+            <span class="card-date">${formatDate(prompt.updated_at)}</span>
+            <span class="card-stats">
+                <span>👁 ${prompt.stats.view_count}</span>
+                <span>🧪 ${prompt.stats.test_count}</span>
+            </span>
+        </div>
+    `;
+    
+    card.addEventListener('click', () => {
+        window.location.href = `/editor/${prompt.id}`;
+    });
+    
+    return card;
+}
+
+// 加载标签
+async function loadTags() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/v1/tags', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            renderTagFilter(data.data);
+        }
+    } catch (error) {
+        console.error('加载标签失败:', error);
+    }
+}
+
+// 渲染标签过滤器
+function renderTagFilter(tags) {
+    const tagFilter = document.getElementById('tagFilter');
+    
+    // 保留"全部"选项
+    const allOption = tagFilter.querySelector('[data-tag=""]');
+    tagFilter.innerHTML = '';
+    tagFilter.appendChild(allOption);
+    
+    // 添加标签
+    tags.forEach(tag => {
+        const tagItem = document.createElement('span');
+        tagItem.className = 'tag-item';
+        tagItem.dataset.tag = tag.id;
+        tagItem.textContent = tag.name;
+        tagItem.style.borderColor = tag.color;
+        
+        tagItem.addEventListener('click', () => {
+            // 切换激活状态
+            document.querySelectorAll('.tag-item').forEach(t => t.classList.remove('active'));
+            tagItem.classList.add('active');
+            
+            // 重新加载Prompt
+            const search = document.getElementById('searchBar').value;
+            loadPrompts(1, search, tag.id);
+        });
+        
+        tagFilter.appendChild(tagItem);
+    });
+}
+
+// 渲染分页
+function renderPagination(pagination) {
+    const paginationEl = document.getElementById('pagination');
+    paginationEl.innerHTML = '';
+    
+    if (pagination.pages <= 1) return;
+    
+    // 上一页
+    if (pagination.page > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'page-btn';
+        prevBtn.textContent = '上一页';
+        prevBtn.onclick = () => loadPrompts(pagination.page - 1);
+        paginationEl.appendChild(prevBtn);
+    }
+    
+    // 页码
+    for (let i = 1; i <= pagination.pages; i++) {
+        if (i === 1 || i === pagination.pages || (i >= pagination.page - 2 && i <= pagination.page + 2)) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `page-btn ${i === pagination.page ? 'active' : ''}`;
+            pageBtn.textContent = i;
+            pageBtn.onclick = () => loadPrompts(i);
+            paginationEl.appendChild(pageBtn);
+        } else if (i === pagination.page - 3 || i === pagination.page + 3) {
+            const dots = document.createElement('span');
+            dots.className = 'page-dots';
+            dots.textContent = '...';
+            paginationEl.appendChild(dots);
+        }
+    }
+    
+    // 下一页
+    if (pagination.page < pagination.pages) {
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'page-btn';
+        nextBtn.textContent = '下一页';
+        nextBtn.onclick = () => loadPrompts(pagination.page + 1);
+        paginationEl.appendChild(nextBtn);
+    }
+}
+
+// 绑定页面特定事件
+function bindPageEvents() {
+    // 新建Prompt
+    document.getElementById('newPromptCard').addEventListener('click', () => {
+        window.location.href = '/editor/new';
+    });
+    
+    // 排序
+    document.getElementById('sortSelect').addEventListener('change', () => {
+        const search = document.getElementById('searchBar').value;
+        loadPrompts(1, search);
+    });
+    
+    // 标签过滤器的"全部"选项
+    document.querySelector('[data-tag=""]').addEventListener('click', () => {
+        document.querySelectorAll('.tag-item').forEach(t => t.classList.remove('active'));
+        document.querySelector('[data-tag=""]').classList.add('active');
+        const search = document.getElementById('searchBar').value;
+        loadPrompts(1, search);
+    });
+}
+</script>
+{% endblock %}

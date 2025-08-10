@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Prompt the World - AI Prompt管理平台{% endblock %}</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    {% block styles %}{% endblock %}
+    
+    <!-- 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+</head>
+<body data-theme="light">
+    {% block content %}{% endblock %}
+    
+    <!-- 背景音乐控制 -->
+    <div class="music-control">
+        <button class="music-toggle" id="musicToggle">🎵</button>
+        <select class="music-select" id="musicSelect">
+            <option value="">无音乐</option>
+            <option value="rain">雨声</option>
+            <option value="forest">森林</option>
+            <option value="piano">轻钢琴</option>
+        </select>
+    </div>
+    
+    <!-- 音频元素 -->
+    <audio id="backgroundMusic" loop></audio>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

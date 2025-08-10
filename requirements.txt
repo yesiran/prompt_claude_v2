@@ -1,0 +1,21 @@
+# Flask核心
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-JWT-Extended==4.5.3
+Flask-CORS==4.0.0
+
+# 数据库
+PyMySQL==1.1.0
+SQLAlchemy==2.0.23
+
+# 密码加密
+Werkzeug==3.0.1
+
+# 环境变量
+python-dotenv==1.0.0
+
+# HTTP客户端（用于调用AI API）
+requests==2.31.0
+
+# 其他工具
+python-dateutil==2.8.2
